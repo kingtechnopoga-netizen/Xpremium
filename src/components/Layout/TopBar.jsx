@@ -4,8 +4,8 @@ import { BrandLogo, BrandWordmark } from '../UI/Brand'
 
 /**
  * Top bar:
- *  - Mobile: hamburger + brand + new-chat
- *  - Desktop: chat title + active model chip + view toggle
+ *  - Mobile: slim 48px bar — hamburger + brand + new-chat (no extra chips)
+ *  - Desktop: 56px bar — chat title + active model chip + view toggle
  */
 export default function TopBar({ onPickModel }) {
   const view = useChatStore((s) => s.view)
@@ -16,7 +16,7 @@ export default function TopBar({ onPickModel }) {
   const model = useChatStore((s) => s.getActiveModel())
 
   return (
-    <header className="relative z-20 flex h-14 items-center gap-2 border-b hairline px-3 sm:px-4 glass">
+    <header className="relative z-20 flex h-12 md:h-14 items-center gap-2 border-b hairline px-2.5 sm:px-4 glass safe-top">
       <button
         type="button"
         onClick={toggleSidebar}
@@ -26,13 +26,24 @@ export default function TopBar({ onPickModel }) {
         <Menu size={18} />
       </button>
 
-      <div className="flex items-center gap-2 md:hidden">
-        <div className="grid h-7 w-7 place-items-center rounded-md glass-strong">
+      {/* Mobile: brand + truncated chat title (one line) */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 md:hidden">
+        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md glass-strong">
           <BrandLogo size={16} />
         </div>
-        <BrandWordmark className="text-[14px] text-white" />
+        <div className="min-w-0">
+          <div className="truncate text-[13.5px] font-medium text-steel-100 leading-tight">
+            {chat?.title && chat.title !== 'New conversation' ? chat.title : 'XPremChatbot'}
+          </div>
+          {chat?.title && chat.title !== 'New conversation' && (
+            <div className="truncate text-[10px] uppercase tracking-[0.2em] text-steel-400/80 leading-tight">
+              {model.label}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Desktop: chat title + meta */}
       <div className="hidden flex-1 items-center gap-3 md:flex">
         <div className="min-w-0">
           <div className="truncate text-[13px] font-medium text-steel-100">

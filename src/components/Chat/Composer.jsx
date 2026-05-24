@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  ArrowUp, Image as ImageIcon, Paperclip, Square, X, Cpu, Sparkles,
+  ArrowUp, Image as ImageIcon, Paperclip, Square, X, Cpu, Sparkles, Plus, Globe,
 } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { readAsDataURL, readAsText } from '../../lib/utils'
@@ -10,11 +10,11 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB
 const MAX_FILE_BYTES = 200 * 1024        // 200KB inlined as text
 
 /**
- * The premium AI composer.
- * - Auto-growing textarea (mobile-safe)
- * - Image + file attachments
- * - Streaming send / abort
- * - Model + mode chips
+ * Premium mobile-first composer.
+ *
+ * Mobile (≤ sm): single compact row — `+` button (attach + mode), textarea, send.
+ *                Mode is shown as a subtle label inside the input placeholder.
+ * Desktop:       full row with mode pills, attach buttons, model chip, send.
  */
 export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
   const sendOnEnter = useChatStore((s) => s.sendOnEnter)
@@ -23,18 +23,34 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
   const [images, setImages] = useState([])
   const [files, setFiles] = useState([])
   const [mode, setMode] = useState('chat') // 'chat' | 'code' | 'web'
+  const [moreOpen, setMoreOpen] = useState(false)
   const taRef = useRef(null)
   const imgInputRef = useRef(null)
   const fileInputRef = useRef(null)
+  const moreRef = useRef(null)
 
-  // Auto-grow textarea
+  // Auto-grow textarea — bounded so it never eats the chat
   useEffect(() => {
     const el = taRef.current
     if (!el) return
     el.style.height = '0px'
-    const max = window.innerWidth < 768 ? 200 : 280
+    const max = window.innerWidth < 768 ? 140 : 240
     el.style.height = Math.min(el.scrollHeight, max) + 'px'
   }, [text])
+
+  // Close the mobile "more" sheet on outside tap
+  useEffect(() => {
+    if (!moreOpen) return
+    const onDoc = (e) => {
+      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('touchstart', onDoc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('touchstart', onDoc)
+    }
+  }, [moreOpen])
 
   const canSend = !isStreaming && (text.trim().length > 0 || images.length > 0 || files.length > 0)
 
@@ -74,6 +90,7 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
       next.push({ name: f.name, url })
     }
     setImages((s) => [...s, ...next].slice(0, 4))
+    setMoreOpen(false)
   }
 
   const onPickFiles = async (e) => {
@@ -86,7 +103,13 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
       next.push({ name: f.name, size: f.size, text })
     }
     setFiles((s) => [...s, ...next].slice(0, 6))
+    setMoreOpen(false)
   }
+
+  const placeholder =
+    mode === 'code' ? 'Describe code or paste a snippet…'
+    : mode === 'web' ? 'Ask a question, citing real-world context…'
+    : 'Message XPremChatbot'
 
   return (
     <div className="relative">
@@ -96,16 +119,34 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
         transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
         className="accent-border glass-strong rounded-2xl shadow-glass-lg"
       >
-        <div className="px-3 pt-3">
+        <div className="px-2.5 pt-2.5 sm:px-3 sm:pt-3">
+          {/* Mode label (mobile only, when not chat) */}
+          {mode !== 'chat' && (
+            <div className="mb-1.5 flex items-center gap-1.5 sm:hidden">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-glow/30 bg-emerald-glow/10 px-2 py-[2px] text-[10px] uppercase tracking-[0.16em] text-emerald-glow">
+                {mode === 'code' ? <Cpu size={10} /> : <Globe size={10} />}
+                {mode}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMode('chat')}
+                className="text-[10px] uppercase tracking-[0.16em] text-steel-400 hover:text-white"
+                aria-label="Reset to chat mode"
+              >
+                clear
+              </button>
+            </div>
+          )}
+
           {/* Attachments preview */}
           {(images.length > 0 || files.length > 0) && (
-            <div className="mb-2 flex flex-wrap items-center gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
               {images.map((img, i) => (
                 <div key={i} className="relative">
                   <img
                     src={img.url}
                     alt={img.name}
-                    className="h-14 w-14 rounded-md border border-white/[0.08] object-cover"
+                    className="h-12 w-12 rounded-md border border-white/[0.08] object-cover sm:h-14 sm:w-14"
                   />
                   <button
                     type="button"
@@ -120,18 +161,18 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
               {files.map((f, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1.5 text-xs text-steel-200"
+                  className="flex max-w-[180px] items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1.5 text-xs text-steel-200"
                   title={f.name}
                 >
-                  <Paperclip size={12} className="text-steel-400" />
-                  <span className="max-w-[160px] truncate font-mono">{f.name}</span>
+                  <Paperclip size={11} className="shrink-0 text-steel-400" />
+                  <span className="truncate font-mono text-[11px]">{f.name}</span>
                   <button
                     type="button"
                     onClick={() => setFiles((s) => s.filter((_, idx) => idx !== i))}
                     className="text-steel-400 hover:text-white"
                     aria-label="Remove file"
                   >
-                    <X size={12} />
+                    <X size={11} />
                   </button>
                 </div>
               ))}
@@ -143,28 +184,105 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={
-              mode === 'code'
-                ? 'Describe code, paste a snippet, or ask for a refactor…'
-                : mode === 'web'
-                ? 'Ask a question that benefits from current context…'
-                : 'Message XPremChatbot — Shift+Enter for newline'
-            }
+            placeholder={placeholder}
             rows={1}
-            className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-steel-100 placeholder:text-steel-400/70 focus:outline-none"
-            style={{ minHeight: 24 }}
+            className="w-full resize-none bg-transparent text-[15px] leading-snug text-steel-100 placeholder:text-steel-400/70 focus:outline-none"
+            style={{ minHeight: 22 }}
           />
         </div>
 
-        {/* Bottom action row */}
-        <div className="flex items-center gap-1 px-2.5 pb-2.5 pt-1.5">
+        {/* ── Mobile: compact single row ──────────────────────────── */}
+        <div className="flex items-center gap-1 px-2 pb-2 pt-1 sm:hidden">
+          {/* "+" attach/mode menu */}
+          <div className="relative" ref={moreRef}>
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              className={`grid h-9 w-9 place-items-center rounded-xl border transition ${
+                moreOpen
+                  ? 'border-white/[0.16] bg-white/[0.06] text-white'
+                  : 'border-white/[0.06] bg-white/[0.02] text-steel-300'
+              }`}
+              aria-label="Attach or change mode"
+              aria-expanded={moreOpen}
+            >
+              <Plus size={16} className={moreOpen ? 'rotate-45 transition' : 'transition'} />
+            </button>
+
+            {moreOpen && (
+              <div className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-[200px] glass-strong rounded-xl p-1 shadow-glass-lg">
+                <MenuItem icon={<ImageIcon size={13} />} label="Attach image" onClick={() => imgInputRef.current?.click()} />
+                <MenuItem icon={<Paperclip size={13} />} label="Attach file" onClick={() => fileInputRef.current?.click()} />
+                <div className="my-1 border-t hairline" />
+                <div className="px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-steel-400/80">mode</div>
+                <MenuItem
+                  icon={<Sparkles size={13} className={mode === 'chat' ? 'text-emerald-glow' : ''} />}
+                  label="Chat"
+                  active={mode === 'chat'}
+                  onClick={() => { setMode('chat'); setMoreOpen(false) }}
+                />
+                <MenuItem
+                  icon={<Cpu size={13} className={mode === 'code' ? 'text-emerald-glow' : ''} />}
+                  label="Coding"
+                  active={mode === 'code'}
+                  onClick={() => { setMode('code'); setMoreOpen(false) }}
+                />
+                <MenuItem
+                  icon={<Globe size={13} className={mode === 'web' ? 'text-emerald-glow' : ''} />}
+                  label="Web search"
+                  active={mode === 'web'}
+                  onClick={() => { setMode('web'); setMoreOpen(false) }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Spacer / model name */}
+          <button
+            type="button"
+            onClick={onPickModel}
+            className="ml-1 flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] text-steel-300 active:bg-white/[0.05]"
+            title={model.label}
+          >
+            <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-glow/70" />
+            <span className="truncate">{model.label}</span>
+          </button>
+
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={onStop}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-red-400/40 bg-red-400/10 text-red-300"
+              aria-label="Stop generation"
+            >
+              <Square size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!canSend}
+              className={`grid h-9 w-9 place-items-center rounded-xl border transition ${
+                canSend
+                  ? 'border-emerald-glow/40 bg-gradient-to-br from-emerald-glow/20 to-cyan-glow/20 text-emerald-glow shadow-emerald-soft'
+                  : 'border-white/[0.06] bg-white/[0.02] text-steel-400'
+              }`}
+              aria-label="Send"
+            >
+              <ArrowUp size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* ── Desktop: full row ───────────────────────────────────── */}
+        <div className="hidden items-center gap-1 px-2.5 pb-2.5 pt-1.5 sm:flex">
           <ChipButton onClick={() => imgInputRef.current?.click()} aria-label="Attach image">
             <ImageIcon size={14} />
-            <span className="hidden sm:inline">image</span>
+            <span>image</span>
           </ChipButton>
           <ChipButton onClick={() => fileInputRef.current?.click()} aria-label="Attach file">
             <Paperclip size={14} />
-            <span className="hidden sm:inline">file</span>
+            <span>file</span>
           </ChipButton>
 
           <div className="mx-1 h-5 w-px bg-white/[0.06]" />
@@ -175,7 +293,7 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
           <ModePill active={mode === 'code'} onClick={() => setMode('code')} icon={<Cpu size={12} />}>
             code
           </ModePill>
-          <ModePill active={mode === 'web'} onClick={() => setMode('web')} icon={<span className="font-mono text-[10px]">web</span>}>
+          <ModePill active={mode === 'web'} onClick={() => setMode('web')} icon={<Globe size={12} />}>
             search
           </ModePill>
 
@@ -183,7 +301,7 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
             <button
               type="button"
               onClick={onPickModel}
-              className="hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] uppercase tracking-[0.16em] text-steel-300 hover:bg-white/[0.05] hover:text-white sm:inline-flex"
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[12px] text-steel-300 hover:bg-white/[0.05] hover:text-white"
               title={model.label}
             >
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-glow/70" />
@@ -198,7 +316,7 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
                 aria-label="Stop generation"
               >
                 <Square size={14} />
-                <span className="hidden sm:inline">stop</span>
+                <span>stop</span>
               </button>
             ) : (
               <button
@@ -222,7 +340,7 @@ export default function Composer({ onSend, isStreaming, onStop, onPickModel }) {
       <input ref={imgInputRef} type="file" accept="image/*" multiple hidden onChange={onPickImages} />
       <input ref={fileInputRef} type="file" multiple hidden onChange={onPickFiles} />
 
-      <div className="mt-1.5 px-1 text-center text-[11px] text-steel-400/70">
+      <div className="mt-1 hidden text-center text-[11px] text-steel-400/70 sm:block">
         Powered by puter.js · multi-model · streaming
       </div>
     </div>
@@ -271,6 +389,21 @@ function ModePill({ active, onClick, icon, children }) {
     >
       <span className="opacity-90">{icon}</span>
       <span className="normal-case tracking-normal">{children}</span>
+    </button>
+  )
+}
+
+function MenuItem({ icon, label, onClick, active }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] ${
+        active ? 'text-emerald-glow' : 'text-steel-200'
+      } hover:bg-white/[0.05]`}
+    >
+      <span className="opacity-80">{icon}</span>
+      <span className="truncate">{label}</span>
     </button>
   )
 }

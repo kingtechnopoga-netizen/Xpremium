@@ -10,7 +10,7 @@ import CodexWorkspace from './components/Codex/CodexWorkspace'
 import SettingsPanel from './components/Settings/SettingsPanel'
 import MemoryManager from './components/Memory/MemoryManager'
 import ModelSelector from './components/Settings/ModelSelector'
-import DonationFooter, { MobileDonationStrip } from './components/Footer/DonationFooter'
+import DonationFooter from './components/Footer/DonationFooter'
 import { ToastProvider } from './components/UI/Toast'
 import { useChatStore } from './store/chatStore'
 import { ensurePuterScript } from './lib/puter'
@@ -92,7 +92,7 @@ export default function App() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -20, opacity: 0 }}
                 transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-                className="absolute inset-y-0 left-0 w-[86vw] max-w-[320px]"
+                className="absolute inset-y-0 left-0 w-[88vw] max-w-[340px]"
               >
                 <Sidebar mobile onClose={() => setSidebarOpen(false)} />
               </motion.div>
@@ -131,7 +131,6 @@ export default function App() {
             </AnimatePresence>
           </main>
 
-          <MobileDonationStrip />
           <BottomNav onPickModel={() => setModelPickerOpen(true)} />
         </div>
       </div>

@@ -33,16 +33,16 @@ export default function CodeBlock({ language, children, code, plain }) {
 
   return (
     <div className="my-3 overflow-hidden rounded-xl border border-white/5 bg-ink-900/80 shadow-glass">
-      <div className="flex items-center justify-between border-b border-white/[0.05] bg-white/[0.025] px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-steel-400">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-glow/70" />
-          <span className="font-mono normal-case tracking-normal text-steel-300/90">{lang}</span>
+      <div className="flex items-center justify-between border-b border-white/[0.05] bg-white/[0.025] px-2.5 py-1.5 text-[11px] uppercase tracking-[0.18em] text-steel-400 sm:px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-glow/70" />
+          <span className="truncate font-mono normal-case tracking-normal text-steel-300/90">{lang}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-steel-300 transition hover:bg-white/[0.05] hover:text-white"
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-steel-300 transition hover:bg-white/[0.05] hover:text-white sm:gap-1.5 sm:px-2"
             aria-label="Copy code"
           >
             {copied ? <Check size={12} className="text-emerald-glow" /> : <Copy size={12} />}
@@ -51,7 +51,7 @@ export default function CodeBlock({ language, children, code, plain }) {
           <button
             type="button"
             onClick={onDownload}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-steel-300 transition hover:bg-white/[0.05] hover:text-white"
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-steel-300 transition hover:bg-white/[0.05] hover:text-white sm:gap-1.5 sm:px-2"
             aria-label="Download code"
           >
             <Download size={12} />
@@ -60,9 +60,9 @@ export default function CodeBlock({ language, children, code, plain }) {
         </div>
       </div>
       {plain ? (
-        <pre className="overflow-x-auto px-4 py-3 text-[13px] leading-[1.6] text-steel-100">{text}</pre>
+        <pre className="overflow-x-auto px-3 py-3 text-[12.5px] leading-[1.6] text-steel-100 sm:px-4 sm:text-[13px]">{text}</pre>
       ) : (
-        <pre className="overflow-x-auto px-4 py-3">{children}</pre>
+        <pre className="overflow-x-auto px-3 py-3 sm:px-4">{children}</pre>
       )}
     </div>
   )

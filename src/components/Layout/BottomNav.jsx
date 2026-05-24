@@ -3,7 +3,7 @@ import { useChatStore } from '../../store/chatStore'
 
 /**
  * Mobile-only thumb-friendly bottom navigation.
- * Sits above the keyboard with safe-area padding.
+ * Slim 56px (incl. safe area) so chat content gets maximum vertical space.
  */
 export default function BottomNav({ onPickModel }) {
   const view = useChatStore((s) => s.view)
@@ -12,7 +12,7 @@ export default function BottomNav({ onPickModel }) {
   const setSettingsOpen = useChatStore((s) => s.setSettingsOpen)
 
   return (
-    <nav className="relative z-10 flex items-center justify-around border-t hairline glass safe-bottom md:hidden">
+    <nav className="relative z-10 flex items-stretch border-t hairline glass safe-bottom md:hidden">
       <NavBtn active={view === 'chat'} onClick={() => setView('chat')} icon={<MessageSquare size={16} />} label="Chat" />
       <NavBtn active={view === 'codex'} onClick={() => setView('codex')} icon={<Code2 size={16} />} label="Codex" />
       <NavBtn onClick={onPickModel} icon={<Cpu size={16} />} label="Model" />
@@ -27,18 +27,18 @@ function NavBtn({ active, onClick, icon, label }) {
     <button
       type="button"
       onClick={onClick}
-      className={`group/nav flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[10px] transition ${
+      className={`group/nav flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[9.5px] transition ${
         active ? 'text-emerald-glow' : 'text-steel-400'
       }`}
     >
       <span
-        className={`grid h-8 w-8 place-items-center rounded-lg transition ${
-          active ? 'bg-emerald-glow/12 ring-1 ring-emerald-glow/25' : 'group-hover/nav:bg-white/[0.04]'
+        className={`grid h-7 w-7 place-items-center rounded-lg transition ${
+          active ? 'bg-emerald-glow/12 ring-1 ring-emerald-glow/25' : ''
         }`}
       >
         {icon}
       </span>
-      <span className="uppercase tracking-[0.18em]">{label}</span>
+      <span className="uppercase tracking-[0.16em] leading-none">{label}</span>
     </button>
   )
 }

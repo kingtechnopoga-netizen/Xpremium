@@ -216,12 +216,12 @@ export default function ChatView({ onPickModel }) {
     <div className="relative flex h-full min-h-0 flex-col">
       <div
         ref={scrollerRef}
-        className="flex-1 min-h-0 overflow-y-auto px-3 pb-4 pt-3 sm:px-6 sm:pt-6"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-3 sm:px-6 sm:pt-6"
       >
         {visibleMessages.length === 0 ? (
           <EmptyState onSuggest={onSuggest} />
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          <div className="mx-auto flex max-w-3xl flex-col gap-4 sm:gap-5">
             {visibleMessages.map((m, idx) => (
               <Message
                 key={m.id}
@@ -259,7 +259,7 @@ export default function ChatView({ onPickModel }) {
         </button>
       )}
 
-      <div className="mx-auto w-full max-w-3xl px-3 pb-3 sm:px-6 safe-bottom">
+      <div className="mx-auto w-full max-w-3xl px-2.5 pb-2 pt-1 sm:px-6 sm:pb-3">
         <Composer
           onSend={onSend}
           isStreaming={isStreaming}

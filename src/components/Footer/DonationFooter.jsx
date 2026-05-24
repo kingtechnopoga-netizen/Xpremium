@@ -123,35 +123,10 @@ function GCashBadge() {
 }
 
 /**
- * Inline donation strip used at the bottom of mobile view (since the floating
- * panel is desktop-only). Always rendered, compact and never spammy.
+ * (Kept for backwards-compat — not used in current mobile layout.)
+ * The donation card now lives inside the Sidebar footer on mobile,
+ * preserving precious vertical space in the chat surface.
  */
 export function MobileDonationStrip() {
-  const [copied, setCopied] = useState(false)
-  const onCopy = async () => {
-    const ok = await copyText(GCASH_NUMBER)
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 1500) }
-  }
-  return (
-    <div className="md:hidden">
-      <div className="mx-auto max-w-3xl px-3 pb-2 pt-1">
-        <div className="flex items-center gap-2 rounded-xl border hairline bg-white/[0.02] px-3 py-2 text-[11px] text-steel-300">
-          <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-glow/12 text-emerald-glow ring-1 ring-emerald-glow/25">
-            <Heart size={10} />
-          </span>
-          <span className="truncate">
-            Support the creator · GCash <span className="font-mono text-steel-100">{GCASH_NUMBER}</span>
-          </span>
-          <button
-            type="button"
-            onClick={onCopy}
-            className="ml-auto inline-flex items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[11px] text-steel-200 hover:text-white"
-          >
-            {copied ? <Check size={11} className="text-emerald-glow" /> : <Copy size={11} />}
-            {copied ? 'copied' : 'copy'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  return null
 }

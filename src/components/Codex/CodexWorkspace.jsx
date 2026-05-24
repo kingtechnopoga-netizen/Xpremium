@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Play, Code2, Eye, Wand2, Bug, Lightbulb, Download, Copy, Check, FileCode2, Plus, Trash2, Cpu,
+  Play, Code2, Eye, Wand2, Bug, Lightbulb, Download, Copy, FileCode2, Plus, Trash2, Cpu,
+  Menu, X,
 } from 'lucide-react'
 import { copyText, downloadFile, uid } from '../../lib/utils'
 import { useChatStore } from '../../store/chatStore'
-import { completeOnce, streamChat, findModel } from '../../lib/puter'
+import { streamChat, findModel } from '../../lib/puter'
 import { useToast } from '../UI/Toast'
 
 const STARTER_FILES = () => [
@@ -70,9 +71,15 @@ const EXT_TO_LANG = {
 
 /**
  * Codex coding workspace.
- *  - Multi-file editor (textarea, mobile-safe)
- *  - Live HTML/CSS/JS preview via srcdoc bundling
- *  - AI explain / refactor / debug actions stream into a side console
+ *
+ * Mobile layout:
+ *  - Slim toolbar: brand + Run + AI menu (+ files button as a slide-in)
+ *  - Tabs (Code / Preview) — full width, no Split mode
+ *  - Files appear as a slide-in panel from the left
+ *  - AI console docks at the bottom, collapsible
+ *
+ * Desktop layout:
+ *  - Full toolbar with explicit buttons, Split mode, file sidebar
  */
 export default function CodexWorkspace() {
   const toast = useToast()
@@ -89,13 +96,16 @@ export default function CodexWorkspace() {
     } catch { /* ignore */ }
     return STARTER_FILES()
   })
-  const [activeId, setActiveId] = useState(() => null)
-  const [tab, setTab] = useState('split') // 'code' | 'preview' | 'split'
-  const [running, setRunning] = useState(0) // bumps to refresh iframe
+  const [activeId, setActiveId] = useState(null)
+  const [tab, setTab] = useState('code') // mobile default: 'code'
+  const [running, setRunning] = useState(0)
   const [aiOutput, setAiOutput] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [filesOpen, setFilesOpen] = useState(false)
+  const [aiMenuOpen, setAiMenuOpen] = useState(false)
   const abortRef = useRef(null)
+  const aiMenuRef = useRef(null)
 
   useEffect(() => {
     if (!activeId && files[0]) setActiveId(files[0].id)
@@ -105,13 +115,30 @@ export default function CodexWorkspace() {
     try { localStorage.setItem('xprem-codex-files', JSON.stringify(files)) } catch { /* quota */ }
   }, [files])
 
+  // Default to split on desktop, code on mobile
+  useEffect(() => {
+    if (window.matchMedia?.('(min-width: 768px)').matches) setTab('split')
+  }, [])
+
+  useEffect(() => {
+    if (!aiMenuOpen) return
+    const onDoc = (e) => {
+      if (aiMenuRef.current && !aiMenuRef.current.contains(e.target)) setAiMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('touchstart', onDoc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('touchstart', onDoc)
+    }
+  }, [aiMenuOpen])
+
   const activeFile = files.find((f) => f.id === activeId) || null
 
   const previewSrcDoc = useMemo(() => {
     const html = files.find((f) => f.lang === 'html')?.content || '<!doctype html><html><body></body></html>'
     const css = files.filter((f) => f.lang === 'css').map((f) => f.content).join('\n')
     const js = files.filter((f) => f.lang === 'javascript').map((f) => f.content).join(';\n')
-    // Inject CSS + JS — strip references to local files which won't resolve in srcdoc
     let merged = html
     merged = merged.replace(/<link[^>]*href="(?:[^"]*\.css)"[^>]*>/gi, '')
     merged = merged.replace(/<script[^>]*src="(?:[^"]*\.js)"[^>]*><\/script>/gi, '')
@@ -159,6 +186,7 @@ export default function CodexWorkspace() {
 
   const runAI = async (kind) => {
     if (!activeFile) return
+    setAiMenuOpen(false)
     setAiBusy(true)
     setAiOpen(true)
     setAiOutput('')
@@ -195,8 +223,18 @@ export default function CodexWorkspace() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1.5 border-b hairline glass px-3 py-2">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 border-b hairline glass px-2 py-1.5 sm:px-3 sm:py-2">
+        {/* Mobile-only: file panel toggle */}
+        <button
+          type="button"
+          onClick={() => setFilesOpen((v) => !v)}
+          className="grid h-8 w-8 place-items-center rounded-md text-steel-300 hover:bg-white/[0.05] hover:text-white sm:hidden"
+          aria-label="Files"
+        >
+          <Menu size={15} />
+        </button>
+
+        <div className="hidden items-center gap-1.5 sm:flex">
           <div className="grid h-7 w-7 place-items-center rounded-md bg-emerald-glow/10 text-emerald-glow ring-1 ring-emerald-glow/25">
             <Code2 size={14} />
           </div>
@@ -206,6 +244,11 @@ export default function CodexWorkspace() {
           </div>
         </div>
 
+        <div className="min-w-0 flex-1 truncate text-[11.5px] font-mono text-steel-200 sm:hidden">
+          {activeFile?.name || ''}
+        </div>
+
+        {/* Desktop tabs */}
         <div className="ml-2 hidden items-center rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5 sm:inline-flex">
           <Tab active={tab === 'code'} onClick={() => setTab('code')}>
             <Code2 size={12} /> Code
@@ -218,88 +261,65 @@ export default function CodexWorkspace() {
           </Tab>
         </div>
 
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          <button type="button" onClick={() => setRunning((n) => n + 1)} className="btn-ghost">
-            <Play size={12} /> Run
-          </button>
-          <button type="button" onClick={copyActive} className="btn-ghost">
-            <Copy size={12} /> Copy
-          </button>
-          <button type="button" onClick={downloadActive} className="btn-ghost">
-            <Download size={12} /> Save
-          </button>
-          <div className="mx-1 hidden h-5 w-px bg-white/[0.06] sm:block" />
-          <button type="button" onClick={() => runAI('explain')} disabled={aiBusy} className="btn-ghost">
-            <Lightbulb size={12} /> Explain
-          </button>
-          <button type="button" onClick={() => runAI('refactor')} disabled={aiBusy} className="btn-ghost">
-            <Wand2 size={12} /> Refactor
-          </button>
-          <button type="button" onClick={() => runAI('debug')} disabled={aiBusy} className="btn-ghost">
-            <Bug size={12} /> Debug
-          </button>
-          <button
-            type="button"
-            onClick={() => setModelPickerOpen(true)}
-            className="btn-ghost"
-            title="Switch model"
-          >
-            <Cpu size={12} />
-            <span className="hidden md:inline">{model.label}</span>
-          </button>
+        <div className="ml-auto flex items-center gap-1">
+          <IconBtn onClick={() => setRunning((n) => n + 1)} title="Run preview">
+            <Play size={14} />
+          </IconBtn>
+
+          {/* Mobile: AI menu (Explain/Refactor/Debug behind one button) */}
+          <div className="relative sm:hidden" ref={aiMenuRef}>
+            <IconBtn onClick={() => setAiMenuOpen((v) => !v)} title="AI actions">
+              <Wand2 size={14} />
+            </IconBtn>
+            {aiMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] z-30 w-44 glass-strong rounded-xl p-1 shadow-glass-lg">
+                <MenuRow icon={<Lightbulb size={13} />} label="Explain" onClick={() => runAI('explain')} disabled={aiBusy} />
+                <MenuRow icon={<Wand2 size={13} />} label="Refactor" onClick={() => runAI('refactor')} disabled={aiBusy} />
+                <MenuRow icon={<Bug size={13} />} label="Debug" onClick={() => runAI('debug')} disabled={aiBusy} />
+                <div className="my-1 border-t hairline" />
+                <MenuRow icon={<Copy size={13} />} label="Copy file" onClick={copyActive} />
+                <MenuRow icon={<Download size={13} />} label="Save file" onClick={downloadActive} />
+                <MenuRow icon={<Cpu size={13} />} label="Switch model" onClick={() => { setModelPickerOpen(true); setAiMenuOpen(false) }} />
+              </div>
+            )}
+          </div>
+
+          {/* Desktop full action bar */}
+          <div className="hidden items-center gap-1 sm:flex">
+            <button type="button" onClick={copyActive} className="btn-ghost"><Copy size={12} /> Copy</button>
+            <button type="button" onClick={downloadActive} className="btn-ghost"><Download size={12} /> Save</button>
+            <div className="mx-1 h-5 w-px bg-white/[0.06]" />
+            <button type="button" onClick={() => runAI('explain')} disabled={aiBusy} className="btn-ghost"><Lightbulb size={12} /> Explain</button>
+            <button type="button" onClick={() => runAI('refactor')} disabled={aiBusy} className="btn-ghost"><Wand2 size={12} /> Refactor</button>
+            <button type="button" onClick={() => runAI('debug')} disabled={aiBusy} className="btn-ghost"><Bug size={12} /> Debug</button>
+            <button type="button" onClick={() => setModelPickerOpen(true)} className="btn-ghost" title="Switch model">
+              <Cpu size={12} />
+              <span className="hidden md:inline">{model.label}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile tab toggle */}
-      <div className="flex items-center gap-1 px-3 pt-2 sm:hidden">
-        <Tab active={tab === 'code'} onClick={() => setTab('code')}><Code2 size={12} /> Code</Tab>
-        <Tab active={tab === 'preview'} onClick={() => setTab('preview')}><Eye size={12} /> Preview</Tab>
+      <div className="flex items-center gap-0.5 border-b hairline px-2 py-1 sm:hidden">
+        <Tab active={tab === 'code'} onClick={() => setTab('code')} mobile><Code2 size={12} /> Code</Tab>
+        <Tab active={tab === 'preview'} onClick={() => setTab('preview')} mobile><Eye size={12} /> Preview</Tab>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-12">
-        {/* File explorer */}
+        {/* Desktop file sidebar */}
         <aside
           className={`col-span-2 hidden min-h-0 border-r hairline bg-ink-900/40 sm:flex sm:flex-col ${
             tab === 'preview' ? 'sm:hidden' : ''
           }`}
         >
-          <div className="flex items-center justify-between px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-steel-400">
-            <span>files</span>
-            <button
-              type="button"
-              onClick={addFile}
-              className="grid h-6 w-6 place-items-center rounded-md text-steel-300 hover:bg-white/[0.05] hover:text-white"
-              aria-label="Add file"
-            >
-              <Plus size={12} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-1.5 pb-2">
-            {files.map((f) => (
-              <div key={f.id} className="group/fl flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setActiveId(f.id)}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] ${
-                    activeId === f.id
-                      ? 'bg-white/[0.05] text-white'
-                      : 'text-steel-300 hover:bg-white/[0.03] hover:text-steel-100'
-                  }`}
-                >
-                  <FileCode2 size={12} className="text-steel-400" />
-                  <span className="truncate font-mono">{f.name}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeFile(f.id)}
-                  className="grid h-6 w-6 place-items-center rounded-md text-steel-400 opacity-0 transition hover:bg-white/[0.05] hover:text-red-300 group-hover/fl:opacity-100"
-                  aria-label="Delete file"
-                >
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            ))}
-          </div>
+          <FilesList
+            files={files}
+            activeId={activeId}
+            setActiveId={setActiveId}
+            addFile={addFile}
+            removeFile={removeFile}
+          />
         </aside>
 
         {/* Editor */}
@@ -312,7 +332,7 @@ export default function CodexWorkspace() {
               : 'sm:col-span-10'
           } col-span-1 flex flex-col`}
         >
-          <div className="flex items-center gap-2 border-b hairline px-3 py-1.5 text-[11px] text-steel-400">
+          <div className="hidden items-center gap-2 border-b hairline px-3 py-1.5 text-[11px] text-steel-400 sm:flex">
             <span className="font-mono text-steel-200">{activeFile?.name || 'no file'}</span>
             <span className="text-steel-400/60">·</span>
             <span>{activeFile?.lang || ''}</span>
@@ -322,7 +342,7 @@ export default function CodexWorkspace() {
               value={activeFile?.content || ''}
               onChange={(e) => updateActive(e.target.value)}
               spellCheck={false}
-              className="absolute inset-0 h-full w-full resize-none bg-ink-900/70 px-4 py-3 font-mono text-[12.5px] leading-[1.65] text-steel-100 outline-none"
+              className="absolute inset-0 h-full w-full resize-none bg-ink-900/70 px-3 py-3 font-mono text-[12.5px] leading-[1.65] text-steel-100 outline-none sm:px-4"
               placeholder="// start writing code…"
             />
           </div>
@@ -352,33 +372,64 @@ export default function CodexWorkspace() {
         </section>
       </div>
 
+      {/* Mobile files panel */}
+      {filesOpen && (
+        <div className="fixed inset-0 z-50 sm:hidden" onClick={() => setFilesOpen(false)}>
+          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+          <div
+            className="absolute inset-y-0 left-0 w-[78vw] max-w-[300px] border-r hairline glass-strong"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b hairline px-3 py-2">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-steel-300">files</div>
+              <button
+                type="button"
+                onClick={() => setFilesOpen(false)}
+                className="grid h-7 w-7 place-items-center rounded-md text-steel-300 hover:bg-white/[0.05] hover:text-white"
+                aria-label="Close files"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <FilesList
+              files={files}
+              activeId={activeId}
+              setActiveId={(id) => { setActiveId(id); setFilesOpen(false) }}
+              addFile={addFile}
+              removeFile={removeFile}
+            />
+          </div>
+        </div>
+      )}
+
       {/* AI console */}
       {aiOpen && (
         <div className="border-t hairline bg-ink-900/85">
-          <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-steel-400">
-            <span className="font-mono">codex · ai console</span>
-            <span className="text-steel-400/60">· {model.label}</span>
+          <div className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-steel-400 sm:px-3">
+            <span className="font-mono">codex · ai</span>
+            <span className="hidden text-steel-400/60 sm:inline">· {model.label}</span>
             {aiBusy && <span className="text-emerald-glow animate-pulse-soft">streaming…</span>}
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex items-center gap-1">
               {aiBusy && (
                 <button type="button" onClick={() => abortRef.current?.abort()} className="btn-ghost btn-danger">
                   Stop
                 </button>
               )}
-              <button
-                type="button"
+              <IconBtn
                 onClick={async () => {
                   const ok = await copyText(aiOutput || '')
                   toast.push(ok ? 'copied' : 'copy failed', { kind: ok ? 'success' : 'error' })
                 }}
-                className="btn-ghost"
+                title="Copy"
               >
-                <Copy size={12} /> Copy
-              </button>
-              <button type="button" onClick={() => setAiOpen(false)} className="btn-ghost">Close</button>
+                <Copy size={13} />
+              </IconBtn>
+              <IconBtn onClick={() => setAiOpen(false)} title="Close">
+                <X size={13} />
+              </IconBtn>
             </div>
           </div>
-          <pre className="max-h-[34vh] overflow-y-auto whitespace-pre-wrap px-4 py-3 font-mono text-[12.5px] leading-[1.65] text-steel-200">
+          <pre className="max-h-[30vh] overflow-y-auto whitespace-pre-wrap px-3 py-3 font-mono text-[12px] leading-[1.65] text-steel-200 sm:px-4 sm:text-[12.5px]">
 {aiOutput || (aiBusy ? '' : '// AI output will appear here.')}
           </pre>
         </div>
@@ -387,16 +438,89 @@ export default function CodexWorkspace() {
   )
 }
 
-function Tab({ active, onClick, children }) {
+function FilesList({ files, activeId, setActiveId, addFile, removeFile }) {
+  return (
+    <>
+      <div className="flex items-center justify-between px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-steel-400">
+        <span>files</span>
+        <button
+          type="button"
+          onClick={addFile}
+          className="grid h-6 w-6 place-items-center rounded-md text-steel-300 hover:bg-white/[0.05] hover:text-white"
+          aria-label="Add file"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-1.5 pb-2">
+        {files.map((f) => (
+          <div key={f.id} className="group/fl flex items-center">
+            <button
+              type="button"
+              onClick={() => setActiveId(f.id)}
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] ${
+                activeId === f.id
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-steel-300 hover:bg-white/[0.03] hover:text-steel-100'
+              }`}
+            >
+              <FileCode2 size={12} className="text-steel-400" />
+              <span className="truncate font-mono">{f.name}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => removeFile(f.id)}
+              className="grid h-6 w-6 place-items-center rounded-md text-steel-400 hover:bg-white/[0.05] hover:text-red-300"
+              aria-label="Delete file"
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function Tab({ active, onClick, children, mobile }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] transition ${
-        active ? 'bg-white/[0.07] text-white' : 'text-steel-300 hover:text-white'
-      }`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md text-[12px] transition ${
+        mobile ? 'flex-1 px-2 py-1.5' : 'px-2.5 py-1.5'
+      } ${active ? 'bg-white/[0.07] text-white' : 'text-steel-300 hover:text-white'}`}
     >
       {children}
+    </button>
+  )
+}
+
+function IconBtn({ children, onClick, title, ...rest }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className="grid h-8 w-8 place-items-center rounded-md text-steel-300 transition hover:bg-white/[0.05] hover:text-white"
+      {...rest}
+    >
+      {children}
+    </button>
+  )
+}
+
+function MenuRow({ icon, label, onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-steel-200 hover:bg-white/[0.05] disabled:opacity-50"
+    >
+      <span className="opacity-80">{icon}</span>
+      <span className="truncate">{label}</span>
     </button>
   )
 }

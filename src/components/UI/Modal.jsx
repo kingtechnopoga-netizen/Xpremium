@@ -42,7 +42,7 @@ export default function Modal({ open, onClose, title, subtitle, children, footer
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 16, opacity: 0, scale: 0.985 }}
             transition={{ duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
-            className={`relative w-full ${widths[size]} accent-border glass-strong shadow-glass-lg sm:rounded-2xl rounded-t-2xl max-h-[88vh] flex flex-col`}
+            className={`relative w-full ${widths[size]} accent-border glass-strong shadow-glass-lg sm:rounded-2xl rounded-t-2xl max-h-[92dvh] sm:max-h-[88vh] flex flex-col safe-bottom`}
           >
             <div className="flex items-start gap-3 border-b hairline px-5 py-4">
               <div className="min-w-0 flex-1">

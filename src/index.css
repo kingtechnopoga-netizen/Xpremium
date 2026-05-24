@@ -149,9 +149,14 @@ body {
 /* Markdown content polish */
 .prose-xp {
   color: var(--xp-text);
-  font-size: 15px;
-  line-height: 1.72;
+  font-size: 14.5px;
+  line-height: 1.7;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+@media (min-width: 640px) {
+  .prose-xp { font-size: 15px; line-height: 1.72; }
 }
 .prose-xp p { margin: 0.5em 0; }
 .prose-xp p:first-child { margin-top: 0; }

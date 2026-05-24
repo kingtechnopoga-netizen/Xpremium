@@ -26,33 +26,33 @@ const SUGGESTIONS = [
 
 export default function EmptyState({ onSuggest }) {
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center px-4 py-10 text-center">
-      <div className="relative mb-5 grid h-14 w-14 place-items-center rounded-2xl glass-strong shadow-glass-lg">
-        <BrandLogo size={30} />
+    <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center px-3 py-6 text-center sm:px-4 sm:py-10">
+      <div className="relative mb-4 grid h-12 w-12 place-items-center rounded-2xl glass-strong shadow-glass-lg sm:mb-5 sm:h-14 sm:w-14">
+        <BrandLogo size={26} />
         <div className="pointer-events-none absolute -inset-2 rounded-3xl bg-emerald-glow/5 blur-2xl" />
       </div>
-      <h1 className="font-display text-3xl tracking-tight text-gradient">
+      <h1 className="font-display text-2xl tracking-tight text-gradient sm:text-3xl">
         How can I help today?
       </h1>
-      <p className="mt-2 max-w-md text-sm text-steel-400">
+      <p className="mt-2 max-w-md text-[13px] text-steel-400 sm:text-sm">
         Encrypted, multi-model intelligence. Stream responses, render markdown,
         debug code — engineered for elite operators.
       </p>
 
-      <div className="mt-7 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="mt-5 grid w-full grid-cols-1 gap-2 sm:mt-7 sm:grid-cols-2">
         {SUGGESTIONS.map((s) => (
           <button
             key={s.title}
             type="button"
             onClick={() => onSuggest?.(`${s.title}\n\n${s.body}`)}
-            className="group/sg relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 text-left transition hover:border-white/[0.12] hover:bg-white/[0.04]"
+            className="group/sg relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left transition hover:border-white/[0.12] hover:bg-white/[0.04] sm:px-3.5 sm:py-3"
           >
-            <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-steel-400">
+            <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-steel-400 sm:text-[11px] sm:tracking-[0.18em]">
               <span className="text-emerald-glow">{s.icon}</span>
               <span>suggestion</span>
             </div>
-            <div className="text-sm font-medium text-steel-100">{s.title}</div>
-            <div className="mt-0.5 text-xs text-steel-400">{s.body}</div>
+            <div className="text-[13.5px] font-medium text-steel-100 sm:text-sm">{s.title}</div>
+            <div className="mt-0.5 text-[11.5px] text-steel-400 sm:text-xs">{s.body}</div>
             <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover/sg:opacity-100">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-glow/40 to-transparent" />
             </div>

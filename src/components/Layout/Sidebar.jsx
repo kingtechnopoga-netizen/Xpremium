@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, Pin, PinOff, Folder, FolderPlus, Trash2, Pencil, MoreHorizontal,
   X, ChevronDown, ChevronRight, Cpu, Brain, Settings, Code2, MessageSquare,
+  Heart, Copy, Check,
 } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { BrandLogo, BrandWordmark } from '../UI/Brand'
@@ -298,7 +299,7 @@ export default function Sidebar({ mobile = false, onClose }) {
       </div>
 
       {/* Footer actions */}
-      <div className="border-t hairline px-2 py-2">
+      <div className="border-t hairline px-2 py-2 safe-bottom">
         <div className="grid grid-cols-2 gap-1.5 px-1">
           <FooterAction
             active={view === 'codex'}
@@ -322,8 +323,54 @@ export default function Sidebar({ mobile = false, onClose }) {
             onClick={() => { setSettingsOpen(true); onClose?.() }}
           />
         </div>
+
+        <DonationCard />
       </div>
     </aside>
+  )
+}
+
+function DonationCard() {
+  const [copied, setCopied] = useState(false)
+  const number = '09482887486'
+  const onCopy = async () => {
+    try {
+      if (navigator?.clipboard?.writeText) await navigator.clipboard.writeText(number)
+      else {
+        const ta = document.createElement('textarea')
+        ta.value = number
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch { /* ignore */ }
+  }
+  return (
+    <div className="mx-1 mt-2 rounded-xl border border-emerald-glow/20 bg-gradient-to-br from-emerald-glow/[0.06] to-cyan-glow/[0.04] p-2.5">
+      <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-steel-300">
+        <Heart size={10} className="text-emerald-glow" />
+        <span>support the creator</span>
+      </div>
+      <p className="text-[11.5px] leading-snug text-steel-400">
+        Enjoying XPremChatbot? Donate <span className="text-emerald-glow">kahit barya</span> via GCash.
+      </p>
+      <button
+        type="button"
+        onClick={onCopy}
+        className="mt-1.5 flex w-full items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1.5 text-[11px] transition hover:border-white/[0.18]"
+      >
+        <span className="font-mono text-steel-100">{number}</span>
+        <span className="inline-flex items-center gap-1 text-steel-300">
+          {copied ? <Check size={11} className="text-emerald-glow" /> : <Copy size={11} />}
+          {copied ? 'copied' : 'copy'}
+        </span>
+      </button>
+    </div>
   )
 }
 

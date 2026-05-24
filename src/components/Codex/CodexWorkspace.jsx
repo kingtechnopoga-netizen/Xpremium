@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { copyText, downloadFile, uid } from '../../lib/utils'
 import { useChatStore } from '../../store/chatStore'
-import { streamChat, findModel } from '../../lib/puter'
+import { streamChat } from '../../lib/puter'
 import { useToast } from '../UI/Toast'
 
 const STARTER_FILES = () => [
@@ -84,7 +84,6 @@ const EXT_TO_LANG = {
 export default function CodexWorkspace() {
   const toast = useToast()
   const model = useChatStore((s) => s.getActiveModel())
-  const defaultModel = useChatStore((s) => s.defaultModel)
   const setModelPickerOpen = useChatStore((s) => s.setModelPickerOpen)
   const systemPrompt = useChatStore((s) => s.systemPrompt)
   const memory = useChatStore((s) => s.memory)
@@ -208,7 +207,7 @@ export default function CodexWorkspace() {
     try {
       await streamChat({
         messages: prompt,
-        model: defaultModel,
+        model: model.id,
         signal: controller.signal,
         onDelta: (_d, full) => setAiOutput(full),
       })

@@ -81,7 +81,7 @@ export default function ChatView({ onPickModel }) {
       assistantId = addMessage(chatId, {
         role: 'assistant',
         content: '',
-        model: modelId,
+        model: model.id, // resolved (alias-safe) model id
         streaming: true,
       })
     } else {
@@ -122,7 +122,7 @@ export default function ChatView({ onPickModel }) {
       let acc = startContent
       const { aborted } = await streamChat({
         messages: finalMessages,
-        model: modelId,
+        model: model.id, // resolved (alias-safe) model id
         signal: controller.signal,
         onDelta: (_d, full) => {
           // For continue: append delta to original content
@@ -161,7 +161,7 @@ export default function ChatView({ onPickModel }) {
       { role: 'system', content: 'You generate concise chat titles. Reply with only a 3-6 word title, no punctuation, no quotes.' },
       { role: 'user', content: `User: ${(firstUser.content || '').slice(0, 600)}\n\nAssistant: ${(firstAsst?.content || '').slice(0, 600)}\n\nTitle:` },
     ]
-    const t = await completeOnce({ messages: prompt, model: modelId })
+    const t = await completeOnce({ messages: prompt, model: model.id })
     const cleaned = String(t || '').replace(/["'`*_]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60)
     if (cleaned) renameChat(chatId, cleaned)
   }

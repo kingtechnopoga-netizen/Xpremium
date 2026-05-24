@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { uid } from '../lib/utils'
-import { findModel } from '../lib/puter'
+import { findModel, resolveModelId, DEFAULT_MODEL } from '../lib/puter'
 
 const DEFAULT_SYSTEM_PROMPT = `You are XPremChatbot, an elite AI operating system designed for hackers, AI engineers, and advanced developers.
 
@@ -34,7 +34,7 @@ export const useChatStore = create(
       memory: '',    // user-curated persistent facts
 
       // ---------- Settings ----------
-      defaultModel: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEFAULT_MODEL) || 'gpt-5-nano',
+      defaultModel: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEFAULT_MODEL) || DEFAULT_MODEL,
       systemPrompt: DEFAULT_SYSTEM_PROMPT,
       streaming: true,
       theme: 'stealth', // 'stealth' | 'graphite' | 'midnight'
@@ -237,8 +237,34 @@ export const useChatStore = create(
     }),
     {
       name: 'xprem-chat-store-v1',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
+      // Migrate old persisted state: any dead model ids get auto-rewritten
+      // to the current equivalent so existing chats keep working.
+      migrate: (persisted) => {
+        if (!persisted) return persisted
+        const next = { ...persisted }
+        if (next.defaultModel) next.defaultModel = resolveModelId(next.defaultModel)
+        if (next.chats) {
+          const chats = {}
+          for (const [k, c] of Object.entries(next.chats)) {
+            chats[k] = c?.model ? { ...c, model: resolveModelId(c.model) } : c
+          }
+          next.chats = chats
+        }
+        return next
+      },
+      // Also sanitize on every rehydrate (defensive — covers state that
+      // pre-dates the version bump).
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        if (state.defaultModel) state.defaultModel = resolveModelId(state.defaultModel)
+        if (state.chats) {
+          for (const c of Object.values(state.chats)) {
+            if (c?.model) c.model = resolveModelId(c.model)
+          }
+        }
+      },
       partialize: (s) => ({
         chats: s.chats,
         chatOrder: s.chatOrder,

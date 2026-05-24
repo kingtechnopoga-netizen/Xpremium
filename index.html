@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+    <meta name="theme-color" content="#05070a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="XPremChatbot — an elite, cinematic AI operating system for hackers, AI engineers, and advanced developers." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta property="og:title" content="XPremChatbot" />
+    <meta property="og:description" content="An elite, cinematic AI operating system." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <title>XPremChatbot</title>
+    <!-- puter.js: AI runtime, models, and storage primitives -->
+    <script src="https://js.puter.com/v2/" defer></script>
+    <style>
+      /* Pre-React boot screen prevents white flash on slow mobile networks */
+      html, body { background: #05070a; color: #e6e9ef; }
+      #boot-fallback {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-family: 'Sora', system-ui, sans-serif; letter-spacing: 0.18em;
+        background: radial-gradient(60% 60% at 50% 40%, rgba(20,28,38,0.6), #05070a 70%);
+        z-index: 9999;
+      }
+      #boot-fallback span {
+        opacity: 0.55; font-size: 14px; text-transform: uppercase;
+        background: linear-gradient(90deg, #34d399, #38bdf8, #34d399);
+        background-size: 200% 100%;
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        animation: bf 2.4s linear infinite;
+      }
+      @keyframes bf { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    </style>
+  </head>
+  <body>
+    <div id="boot-fallback"><span>XPremChatbot · initializing</span></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

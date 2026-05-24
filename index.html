@@ -38,11 +38,27 @@
         animation: bf 2.4s linear infinite;
       }
       @keyframes bf { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+      noscript .ns {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 8px;
+        font-family: 'Sora', system-ui, sans-serif; padding: 24px; text-align: center;
+        background: #05070a; color: #e6e9ef;
+      }
+      noscript .ns h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em;
+        background: linear-gradient(135deg, #34d399, #38bdf8);
+        -webkit-background-clip: text; background-clip: text; color: transparent; }
+      noscript .ns p { margin: 0; max-width: 420px; color: #a7b0bf; font-size: 14px; line-height: 1.6; }
     </style>
   </head>
   <body>
     <div id="boot-fallback"><span>XPremChatbot · initializing</span></div>
     <div id="root"></div>
+    <noscript>
+      <div class="ns">
+        <h1>XPremChatbot</h1>
+        <p>This application requires JavaScript to run. Please enable JavaScript and reload the page.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

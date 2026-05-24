@@ -5,6 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* XPremChatbot · v1.0.1 */
 :root {
   color-scheme: dark;
   --xp-bg: #05070a;
@@ -287,3 +288,9 @@ body {
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Print-friendly fallback (also serves to bust the CSS content hash) */
+@media print {
+  body { background: #fff; color: #000; overflow: auto; }
+  .glass, .glass-strong, .glass-card { background: #fff !important; border-color: #ddd !important; }
+}
